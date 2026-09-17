@@ -74,53 +74,17 @@ Because all four datasets are cataloged during provisioning, the Python demonstr
 
 No region configuration is required. The `esos` and `zoautil_py` packages supplied with Enterprise Server are located automatically, and the `STDENV` DD in each JCL job step adds the demonstration's own script directory to `PYTHONPATH` (e.g. `%ESP%\..\..\sources\python`) so PYLDM can find the `.py` files.
 
-> **About `%ESP%`:** `ESP` is a standard Enterprise Server region variable holding the region's system directory (for example `C:\BankDemo\BANKVSAM\system`). Because the region directory is created inside the BankDemo project, `%ESP%\..\..` resolves back to the project root - so the JCL locates the demo scripts without needing any extra variable to be defined. The JCL in these demonstrations uses this relative form deliberately, so no additional region configuration is required.
+> **About `%ESP%`:** BANKVSAM provisioning defines `ESP` as the region's
+> system directory (for example `C:\BankDemo\BANKVSAM\system`), so users do
+> not need to set it manually. Because the region directory is created inside
+> the BankDemo project, `%ESP%\..\..` resolves back to the project root.
 
 ### Platform-specific JCL
 
-The Python scripts, dataset definitions, and provisioning command are identical on Windows and Linux, but the **STDENV DD is not portable**. Use the JCL from the directory matching your platform:
-
-- Windows: `sources/jcl/interoperability/windows/`
-- Linux: `sources/jcl/interoperability/linux/`
-
-PYLDM writes the contents of the STDENV DD to a temporary script and executes it with the platform's own shell: `cmd.exe` on Windows, `/bin/sh` on Linux. The script therefore has to be written in the syntax of that shell:
-
-| | Windows | Linux |
-|---|---------|-------|
-| Assign a variable | `set NAME=value` | `export NAME=value` |
-| Reference a variable | `%NAME%` | `$NAME` |
-| Directory separator | `\` | `/` |
-| `PYTHONPATH` separator | `;` | `:` |
-
-For example, the Windows JCL uses:
-
-```
-//STDENV   DD  *
-set PYTHONPATH=%ESP%\..\..\sources\python;%PYTHONPATH%
-set ESPY_WORKING_DIR=%ESP%\..\..\sources\python
-set ESPY_OUTPUT_ENCODING=ASCII
-set ESPY_ENABLE_OUTPUT_TRANSCODING=false
-set ESPY_MERGE_SYSOUT=false
-/*
-```
-
-and the Linux JCL uses:
-
-```
-//STDENV   DD  *
-export PYTHONPATH=$ESP/../../sources/python:$PYTHONPATH
-export ESPY_WORKING_DIR=$ESP/../../sources/python
-export ESPY_OUTPUT_ENCODING=ASCII
-export ESPY_ENABLE_OUTPUT_TRANSCODING=false
-export ESPY_MERGE_SYSOUT=false
-/*
-```
-
-Note the two separator changes as well as `set` becoming `export`: `\` becomes `/`, and the `;` joining the two `PYTHONPATH` entries becomes `:`.
-
-`ESP` itself is set by Enterprise Server on both platforms, so `$ESP/../..` resolves to the project root exactly as `%ESP%\..\..` does on Windows.
-
-Everything else is unchanged. `python MF_Provision_Region.py vsam` provisions BANKVSAM on Linux the same way, the dataset names and DD names are identical, and the Python sources need no modification. For Step 5, the COBOL bridge is `libcblcpyiapi.so` rather than `cblcpyiapi.dll`, but `cobol_interop.py` resolves the platform-specific name itself.
+The Python sources and datasets are portable, but inline `STDENV` scripts use
+the host shell. Select the correct JCL directory and syntax as described in
+the [interoperability overview](../../README.md#platform-specific-jcl). For
+Step 5, `cobol_interop.py` resolves the platform-specific COBOL bridge name.
 
 ---
 

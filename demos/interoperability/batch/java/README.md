@@ -77,6 +77,10 @@ In this step, you create a simple COBOL program that calls a Java method, and a 
 ### Setup
 #### Ensure the region's environment variables include:
 
+The BANKVSAM provisioning process defines `ESP` as the region's system
+directory, so users following this demonstration do not need to set it
+manually. The values below use `$ESP` to locate the BANKVSAM loadlib.
+
 Enterprise Server expands `$VAR` references in the region's `[ES-Environment]`
 configuration on both Windows and Linux. Do not use Windows command-shell
 syntax such as `%ESP%` or `%PATH%` here.
@@ -254,7 +258,9 @@ In this step, you bypass the COBOL bootstrap and invoke a Java class directly fr
 > `CLASSPATH` shown below. The classpath must contain both `esjos.jar` and the
 > region loadlib; JVMLDM does not add `esjos.jar` when `CLASSPATH` is explicitly configured.
 >
-> Use the JCL from `sources/jcl/interoperability/windows/` or `sources/jcl/interoperability/linux/` to match the platform-specific STDENV shell syntax.
+> Use the JCL directory matching your platform. See the
+> [interoperability overview](../../README.md#platform-specific-jcl) for the
+> Windows and Linux `STDENV` syntax differences.
 >
 > | | Variable | Value |
 > |---|----------|-------|
@@ -564,24 +570,20 @@ Create the file `JVMREADBNK.jcl`:
    **Windows** (Enterprise Developer 64-bit Command Prompt):
    ```
    javac -cp "%TXDIR%\bin64\esjos.jar" ReadBankData.java
-   cbllink -D READBNKJ.cbl
    ```
 
    **Linux:**
    ```
    javac -cp "$TXDIR/lib/esjos.jar" ReadBankData.java
-   cob -z READBNKJ.cbl
    ```
 
    The `esjos.jar` file is provided with Enterprise Developer/Server at `bin64/esjos.jar` and contains the `com.rocketsoftware.jzos` package.
 
-2. **Deploy** the compiled artifacts to your Enterprise Server instance:
-   - `JVMREADBNK.dll` (or `.so`) → loadlib
-   - `ReadBankData.class` → loadlib
+2. **Deploy** `ReadBankData.class` to your Enterprise Server loadlib.
 
-4. **Ensure** the `MFI01V.MFIDEMO.BNKACC` dataset is cataloged (it is automatically cataloged if you have run the [VSAM demonstration](../../../demos/onprem/vsam/README.md)).
+3. **Ensure** the `MFI01V.MFIDEMO.BNKACC` dataset is cataloged (it is automatically cataloged if you have run the [VSAM demonstration](../../../demos/onprem/vsam/README.md)).
 
-5. **Submit the JCL** and check STDOUT DD:
+4. **Submit the JCL** and check STDOUT DD:
    ```
     === Reading Bank Account Data ===                                                                                                     
        Account: T00010000  Customer: 00001  Type: 1                                                                                        
