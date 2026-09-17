@@ -11,19 +11,15 @@
 //********************************************************************
 //* Python procedure                                                 *
 //********************************************************************
-//PYPROC  PROC PYSCRIPT=,           < Python script or -m module
-//             ARGS='',             < Args to Python script
-//             LOGLVL='+I',         < Debug LVL: +I(info) +T(trc)
-//             REGSIZE='0M',        < EXECUTION REGION SIZE
-//             LEPARM=''
-//PYLDM    EXEC PGM=PYLDM,REGION=&REGSIZE,
-//             PARM='&LEPARM/&LOGLVL &PYSCRIPT &ARGS'
-//SYSPRINT DD  SYSOUT=*             < System stdout
-//SYSOUT   DD  SYSOUT=*             < System stderr / COBOL DISPLAY
-//STDOUT   DD  SYSOUT=*             < Python sys.stdout
-//STDERR   DD  SYSOUT=*             < Python sys.stderr
-//CEEDUMP  DD  SYSOUT=*
-//ABNLIGNR DD  DUMMY
+//PYPROC  PROC PYSCRIPT=,     < Python script or -m module (required)
+//             ARGS=,         < Arguments to Python script
+//             LOGLVL=''      < +T(trace) +D(debug) +I(info) +W(warn)
+//PYLDM    EXEC PGM=PYLDM,
+//             PARM='/&LOGLVL &PYSCRIPT &ARGS'
+//SYSPRINT DD SYSOUT=*          < System stdout
+//SYSOUT   DD SYSOUT=*          < System stderr / COBOL DISPLAY
+//STDOUT   DD SYSOUT=*          < Python sys.stdout
+//STDERR   DD SYSOUT=*          < Python sys.stderr
 //         PEND
 //********************************************************************
 //* End Python procedure                                             *

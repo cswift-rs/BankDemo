@@ -3,21 +3,15 @@
 //******************************************************************** 
 //* Custom JVM procedure                                             * 
 //******************************************************************** 
-//JVMPROC PROC JAVACLS=,            < Fully Qfied Java class..RQD
-//             ARGS=,               < Args to Java class
-//             VERSION='',          < PGM name suffix (e.g. 64)
-//             LOGLVL='+I'          < +T(trace) +I(info) +W(warn)
-//JAVAJVM  EXEC PGM=JVMLDM&VERSION,
+//JVMPROC PROC JAVACLS=,      < Fully qualified Java class (required)
+//             ARGS=,         < Arguments to Java class
+//             LOGLVL=''      < +T(trace) +D(debug) +I(info) +W(warn)
+//JAVAJVM  EXEC PGM=JVMLDM,
 //             PARM='&LOGLVL &JAVACLS &ARGS'
-//SYSPRINT DD  SYSOUT=* < System stdout
-//SYSOUT   DD  SYSOUT=* < System stderr
-//STDOUT   DD  SYSOUT=* < Java System.out
-//STDERR   DD  SYSOUT=* < Java System.err
-//CEEDUMP  DD  SYSOUT=* 
-//CEEOPTS  DD  * 
-TRAP(ON,NOSPIE) 
-/*
-//ABNLIGNR DD  DUMMY
+//SYSPRINT DD SYSOUT=*          < System stdout
+//SYSOUT   DD SYSOUT=*          < System stderr
+//STDOUT   DD SYSOUT=*          < Java System.out
+//STDERR   DD SYSOUT=*          < Java System.err
 //         PEND
 //******************************************************************** 
 //* End Custom JVM procedure                                         * 

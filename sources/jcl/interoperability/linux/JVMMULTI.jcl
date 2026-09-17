@@ -3,18 +3,15 @@
 //*-------------------------------------------------------------------*
 //* Inline JVM procedure (replaces external PROC reference)           *
 //*-------------------------------------------------------------------*
-//JVMPROC PROC JAVACLS=,            < Fully Qfied Java class..RQD
-//             ARGS='',             < Args to Java class
-//             VERSION='',          < PGM name suffix (e.g. 64)
-//             LOGLVL='+I'          < +T(trace) +I(info) +W(warn)
-//JAVAJVM  EXEC PGM=JVMLDM&VERSION,
+//JVMPROC PROC JAVACLS=,      < Fully qualified Java class (required)
+//             ARGS=,         < Arguments to Java class
+//             LOGLVL=''      < +T(trace) +D(debug) +I(info) +W(warn)
+//JAVAJVM  EXEC PGM=JVMLDM,
 //             PARM='&LOGLVL &JAVACLS &ARGS'
 //SYSPRINT DD  SYSOUT=*
 //SYSOUT   DD  SYSOUT=*
 //STDOUT   DD  SYSOUT=*
 //STDERR   DD  SYSOUT=*
-//CEEDUMP  DD  SYSOUT=*
-//ABNLIGNR DD  DUMMY
 //         PEND
 //*-------------------------------------------------------------------*
 //*

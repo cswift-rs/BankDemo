@@ -237,13 +237,15 @@ def main(args=None):
 `sources/jcl/interoperability/<platform>/PYDEMO.jcl` invokes the script in two steps — once as a script, once as a module:
 
 ```jcl
-//PYPROC  PROC PYSCRIPT=,ARGS='',LOGLVL='+I',REGSIZE='0M',LEPARM=''
-//PYLDM    EXEC PGM=PYLDM,REGION=&REGSIZE,
-//             PARM='&LEPARM/&LOGLVL &PYSCRIPT &ARGS'
-//SYSPRINT DD  SYSOUT=*
-//SYSOUT   DD  SYSOUT=*
-//STDOUT   DD  SYSOUT=*
-//STDERR   DD  SYSOUT=*
+//PYPROC  PROC PYSCRIPT=,     < Python script or -m module (required)
+//             ARGS=,         < Arguments to Python script
+//             LOGLVL=''      < +T(trace) +D(debug) +I(info) +W(warn)
+//PYLDM    EXEC PGM=PYLDM,
+//             PARM='/&LOGLVL &PYSCRIPT &ARGS'
+//SYSPRINT DD SYSOUT=*          < System stdout
+//SYSOUT   DD SYSOUT=*          < System stderr / COBOL DISPLAY
+//STDOUT   DD SYSOUT=*          < Python sys.stdout
+//STDERR   DD SYSOUT=*          < Python sys.stderr
 //         PEND
 //*
 //STEP1    EXEC PROC=PYPROC,

@@ -136,12 +136,16 @@ class HelloBatch {
 Create the file `HELLOJAV.cbl`:
 
 ```cobol
+      $set FCDCAT
       $set outdd"SYSOUT"
       *
       * Simple demonstration of calling a Java class from COBOL.
       * The Java class HelloBatch.run() is invoked using the
       * Enterprise Server Java interoperability mechanism.
       *
+       identification division.
+       program-id. HELLOJAV.
+
        procedure division.
            call "Java.HelloBatch.run"
            display "COBOL: Java call succeeded."
@@ -169,8 +173,10 @@ Create the file `HELLOJAV.jcl`:
 //STEPLIB  DD  DSN=LOADLIB,DISP=SHR
 //STDOUT   DD  SYSOUT=*
 //STDERR   DD  SYSOUT=*
+//SYSOUT   DD  SYSOUT=*
 //CEEOPTS  DD *
-ENVAR("ESOS_TEST_VAR=HELLO_FROM_ESOS")
+ENVAR("ESOS_TEST_VAR=HELLO_FROM_ESOS",
+"JAVA_TOOL_OPTIONS=")
 /*
 //
 ```
@@ -182,6 +188,10 @@ ENVAR("ESOS_TEST_VAR=HELLO_FROM_ESOS")
 > | STDOUT | Yes | Java `System.out` - mapped by the runtime's stream redirection |
 > | STDERR | Yes | Java `System.err` - mapped by the runtime's stream redirection |
 > | STDIN | Optional | Java `System.in` - if your Java code reads from `System.in`, allocate this DD with input data or `DUMMY` |
+>
+> Both compiler directives are required for the COBOL output shown below:
+> compile with `FCDCAT` and `OUTDD"SYSOUT"` to route COBOL `DISPLAY`
+> output to the allocated `SYSOUT` DD when using a non-mainframe dialect.
 
 > **Understanding CEEOPTS:**
 >
@@ -189,14 +199,17 @@ ENVAR("ESOS_TEST_VAR=HELLO_FROM_ESOS")
 >
 > ```jcl
 > //CEEOPTS  DD *
-> ENVAR("ESOS_TEST_VAR=HELLO_FROM_ESOS")
+> ENVAR("ESOS_TEST_VAR=HELLO_FROM_ESOS",
+> "JAVA_TOOL_OPTIONS=")
 > /*
 > ```
 >
 > The Java class retrieves `ESOS_TEST_VAR` with `System.getenv("ESOS_TEST_VAR")` and prints it to STDOUT. You can set or extend any environment variable via `ENVAR()`, including those used by the JVM — avoiding the need to configure them in the region's environment.
 > You can verify CEEOPTS is taking effect by checking the step's output - the environment variable value will appear in STDOUT, proving the LE options were applied before the program executed. ENVAR also can take a second parameter to either override (OVR) or not (NONOVR) for the supplied variables.
 
-> **Tip:** Environment variables such as `CLASSPATH` can also be set per-step via the `CEEOPTS` DD using `ENVAR()`, as shown in section 1.3. This avoids needing to configure them in the region's environment.
+> **Tip:** Other environment variables can also be set per-step with
+> `CEEOPTS ENVAR()`. This demonstration inherits `JAVA_HOME` and `CLASSPATH`
+> from the region configuration described above.
 
 ### 1.4 Compile and Run
 
@@ -216,14 +229,18 @@ ENVAR("ESOS_TEST_VAR=HELLO_FROM_ESOS")
 
 2. **Deploy** `HelloBatch.class` and the compiled COBOL program (`HELLOJAV.dll` on Windows, `HELLOJAV.so` on Linux) to your Enterprise Server's loadlib directory (`$ESP/loadlib`).
 
-4. **Submit the JCL**, such as through ESCWA (JES > Control), `cassub`, or the Python submission scripts provided in the `scripts` directory of this project.
+3. **Submit the JCL**, such as through ESCWA (JES > Control), `cassub`, or the Python submission scripts provided in the `scripts` directory of this project.
 
-5. **Check output** in the job's SYSOUT. You should see:
+4. **Check the job output.** Java writes to the `STDOUT` DD:
    ```
    Hello from Java in a batch job!
    Java version: 21.0.x
    Working directory: /path/to/server
    Env var (ESOS_TEST_VAR): HELLO_FROM_ESOS
+   ```
+
+   COBOL writes to the `SYSOUT` DD:
+   ```
    COBOL: Java call succeeded.
    ```
 
@@ -281,21 +298,15 @@ Create the file `JVMDEMO.jcl`:
 //******************************************************************** 
 //* Custom JVM procedure                                             * 
 //******************************************************************** 
-//JVMPROC PROC JAVACLS=,            < Fully Qfied Java class..RQD
-//             ARGS=,               < Args to Java class
-//             VERSION='',          < PGM name suffix (e.g. 64)
-//             LOGLVL='+I'          < +T(trace) +I(info) +W(warn)
-//JAVAJVM  EXEC PGM=JVMLDM&VERSION,
+//JVMPROC PROC JAVACLS=,      < Fully qualified Java class (required)
+//             ARGS=,         < Arguments to Java class
+//             LOGLVL=''      < +T(trace) +D(debug) +I(info) +W(warn)
+//JAVAJVM  EXEC PGM=JVMLDM,
 //             PARM='&LOGLVL &JAVACLS &ARGS'
-//SYSPRINT DD  SYSOUT=* < System stdout
-//SYSOUT   DD  SYSOUT=* < System stderr
-//STDOUT   DD  SYSOUT=* < Java System.out
-//STDERR   DD  SYSOUT=* < Java System.err
-//CEEDUMP  DD  SYSOUT=* 
-//CEEOPTS  DD  * 
-TRAP(ON,NOSPIE) 
-/*
-//ABNLIGNR DD DUMMY
+//SYSPRINT DD SYSOUT=*          < System stdout
+//SYSOUT   DD SYSOUT=*          < System stderr
+//STDOUT   DD SYSOUT=*          < Java System.out
+//STDERR   DD SYSOUT=*          < Java System.err
 //         PEND
 //******************************************************************** 
 //* End Custom JVM procedure                                         * 
@@ -498,21 +509,15 @@ Create the file `JVMREADBNK.jcl`:
 //******************************************************************** 
 //* Custom JVM procedure                                             * 
 //******************************************************************** 
-//JVMPROC PROC JAVACLS=,            < Fully Qfied Java class..RQD
-//             ARGS=,               < Args to Java class
-//             VERSION='',          < PGM name suffix (e.g. 64)
-//             LOGLVL='+I'          < +T(trace) +I(info) +W(warn)
-//JAVAJVM  EXEC PGM=JVMLDM&VERSION,
+//JVMPROC PROC JAVACLS=,      < Fully qualified Java class (required)
+//             ARGS=,         < Arguments to Java class
+//             LOGLVL=''      < +T(trace) +D(debug) +I(info) +W(warn)
+//JAVAJVM  EXEC PGM=JVMLDM,
 //             PARM='&LOGLVL &JAVACLS &ARGS'
-//SYSPRINT DD  SYSOUT=* < System stdout
-//SYSOUT   DD  SYSOUT=* < System stderr
-//STDOUT   DD  SYSOUT=* < Java System.out
-//STDERR   DD  SYSOUT=* < Java System.err
-//CEEDUMP  DD  SYSOUT=* 
-//CEEOPTS  DD  * 
-TRAP(ON,NOSPIE) 
-/*
-//ABNLIGNR DD  DUMMY
+//SYSPRINT DD SYSOUT=*          < System stdout
+//SYSOUT   DD SYSOUT=*          < System stderr
+//STDOUT   DD SYSOUT=*          < Java System.out
+//STDERR   DD SYSOUT=*          < Java System.err
 //         PEND
 //******************************************************************** 
 //* End Custom JVM procedure                                         * 
@@ -820,18 +825,15 @@ public class BankCustAcctReport {
 //*-------------------------------------------------------------------*
 //* Inline JVM procedure (replaces external PROC reference)           *
 //*-------------------------------------------------------------------*
-//JVMPROC PROC JAVACLS=,            < Fully Qfied Java class..RQD
-//             ARGS='',             < Args to Java class
-//             VERSION='',          < PGM name suffix (e.g. 64)
-//             LOGLVL='+I'          < +T(trace) +I(info) +W(warn)
-//JAVAJVM  EXEC PGM=JVMLDM&VERSION,
+//JVMPROC PROC JAVACLS=,      < Fully qualified Java class (required)
+//             ARGS=,         < Arguments to Java class
+//             LOGLVL=''      < +T(trace) +D(debug) +I(info) +W(warn)
+//JAVAJVM  EXEC PGM=JVMLDM,
 //             PARM='&LOGLVL &JAVACLS &ARGS'
 //SYSPRINT DD  SYSOUT=*
 //SYSOUT   DD  SYSOUT=*
 //STDOUT   DD  SYSOUT=*
 //STDERR   DD  SYSOUT=*
-//CEEDUMP  DD  SYSOUT=*
-//ABNLIGNR DD  DUMMY
 //         PEND
 //*-------------------------------------------------------------------*
 //*
@@ -1301,18 +1303,15 @@ The job has three steps, each invoking `VsamAccountOps` with a different operati
 //*-------------------------------------------------------------------*
 //* Inline JVM procedure                                              *
 //*-------------------------------------------------------------------*
-//JVMPROC PROC JAVACLS=,            < Fully Qfied Java class..RQD
-//             ARGS='',             < Args to Java class
-//             VERSION='',          < PGM name suffix (e.g. 64)
-//             LOGLVL='+I'          < +T(trace) +I(info) +W(warn)
-//JAVAJVM  EXEC PGM=JVMLDM&VERSION,
+//JVMPROC PROC JAVACLS=,      < Fully qualified Java class (required)
+//             ARGS=,         < Arguments to Java class
+//             LOGLVL=''      < +T(trace) +D(debug) +I(info) +W(warn)
+//JAVAJVM  EXEC PGM=JVMLDM,
 //             PARM='&LOGLVL &JAVACLS &ARGS'
 //SYSPRINT DD  SYSOUT=*
 //SYSOUT   DD  SYSOUT=*
 //STDOUT   DD  SYSOUT=*
 //STDERR   DD  SYSOUT=*
-//CEEDUMP  DD  SYSOUT=*
-//ABNLIGNR DD  DUMMY
 //         PEND
 //*-------------------------------------------------------------------*
 //*
