@@ -76,9 +76,12 @@ No region configuration is required. The `esos` and `zoautil_py` packages suppli
 
 > **About `%ESP%`:** `ESP` is a standard Enterprise Server region variable holding the region's system directory (for example `C:\BankDemo\BANKVSAM\system`). Because the region directory is created inside the BankDemo project, `%ESP%\..\..` resolves back to the project root - so the JCL locates the demo scripts without needing any extra variable to be defined. The JCL in these demonstrations uses this relative form deliberately, so no additional region configuration is required.
 
-### Running on Linux
+### Platform-specific JCL
 
-The supplied JCL is written for Windows. Everything else in these demonstrations - the Python scripts, the dataset definitions, and the provisioning command - is identical on Linux, but the **STDENV DD is not portable** and must be edited before the jobs will run.
+The Python scripts, dataset definitions, and provisioning command are identical on Windows and Linux, but the **STDENV DD is not portable**. Use the JCL from the directory matching your platform:
+
+- Windows: `sources/jcl/interoperability/windows/`
+- Linux: `sources/jcl/interoperability/linux/`
 
 PYLDM writes the contents of the STDENV DD to a temporary script and executes it with the platform's own shell: `cmd.exe` on Windows, `/bin/sh` on Linux. The script therefore has to be written in the syntax of that shell:
 
@@ -89,7 +92,7 @@ PYLDM writes the contents of the STDENV DD to a temporary script and executes it
 | Directory separator | `\` | `/` |
 | `PYTHONPATH` separator | `;` | `:` |
 
-Each STDENV block in the five `PY*.jcl` files needs converting. For example, this Windows form:
+For example, the Windows JCL uses:
 
 ```
 //STDENV   DD  *
@@ -101,7 +104,7 @@ set ESPY_MERGE_SYSOUT=false
 /*
 ```
 
-becomes this on Linux:
+and the Linux JCL uses:
 
 ```
 //STDENV   DD  *
@@ -197,7 +200,7 @@ set ESPY_MERGE_SYSOUT=false
 | `ESPY_MAIN_ARGS` | Additional script arguments, appended after the PARM arguments |
 | `ESPY_MAIN_ARGS_DD` | Name of the DD holding further arguments (defaults to `MAINARGS`) |
 
-> **Linux:** These examples use Windows batch syntax. PYLDM runs the STDENV script with the platform's own shell, so on Linux use `export NAME=value` and `$NAME` - see [Running on Linux](#running-on-linux).
+> Use the JCL from `sources/jcl/interoperability/windows/` or `sources/jcl/interoperability/linux/` so the STDENV script matches the platform shell.
 
 ---
 
@@ -231,7 +234,7 @@ def main(args=None):
 
 ### 1.2 The JCL
 
-`sources/jcl/PYDEMO.jcl` invokes the script in two steps — once as a script, once as a module:
+`sources/jcl/interoperability/<platform>/PYDEMO.jcl` invokes the script in two steps — once as a script, once as a module:
 
 ```jcl
 //PYPROC  PROC PYSCRIPT=,ARGS='',LOGLVL='+I',REGSIZE='0M',LEPARM=''
@@ -368,7 +371,7 @@ def do_read():
 
 ### 2.2 The JCL
 
-`sources/jcl/PYREADBNK.jcl` runs two steps — display record format and read data file:
+`sources/jcl/interoperability/<platform>/PYREADBNK.jcl` runs two steps — display record format and read data file:
 
 ```jcl
 //* Step 1: Write sample transaction records to the PS dataset
@@ -492,7 +495,7 @@ def do_report(args):
 
 ### 3.2 The JCL
 
-`sources/jcl/PYMULTI.jcl` runs both modes in a two-step job:
+`sources/jcl/interoperability/<platform>/PYMULTI.jcl` runs both modes in a two-step job:
 
 ```jcl
 //* Step 1: Filter customers
@@ -627,7 +630,7 @@ with open_accdata() as f:
 
 ### 4.2 The JCL
 
-`sources/jcl/PYVSAM.jcl` runs five steps: LOOKUP, BROWSE, UPDATE, cleanup (restore), and READ:
+`sources/jcl/interoperability/<platform>/PYVSAM.jcl` runs five steps: LOOKUP, BROWSE, UPDATE, cleanup (restore), and READ:
 
 ```jcl
 //STEP1    EXEC PROC=PYPROC,PYSCRIPT='vsam_account_ops.py',ARGS='LOOKUP B0001'
@@ -796,7 +799,7 @@ def do_twoscomp(args):
 
 ### 5.2 The JCL
 
-`sources/jcl/PYCBLCL.jcl` runs three steps calling each operation:
+`sources/jcl/interoperability/<platform>/PYCBLCL.jcl` runs three steps calling each operation:
 
 ```jcl
 //STEP1    EXEC PROC=PYPROC,PYSCRIPT='cobol_interop.py',ARGS='VERSION'
@@ -848,11 +851,11 @@ The version string and system time reflect your installation, so those two value
 | `sources/python/bank_cust_acct_report.py` | Step 3: Multi-step FILTER + REPORT, COMP-3, dataset write, control cards |
 | `sources/python/vsam_account_ops.py` | Step 4: VSAM LOOKUP / BROWSE / UPDATE / READ via esos |
 | `sources/python/cobol_interop.py` | Step 5: Python→COBOL via _mFpyCobcall |
-| `sources/jcl/PYDEMO.jcl` | JCL for Step 1 (script + module mode) |
-| `sources/jcl/PYREADBNK.jcl` | JCL for Step 2 (sequential write, then read) |
-| `sources/jcl/PYMULTI.jcl` | JCL for Step 3 (multi-step filter/report) |
-| `sources/jcl/PYVSAM.jcl` | JCL for Step 4 (VSAM operations) |
-| `sources/jcl/PYCBLCL.jcl` | JCL for Step 5 (COBOL interop) |
+| `sources/jcl/interoperability/<platform>/PYDEMO.jcl` | JCL for Step 1 (script + module mode) |
+| `sources/jcl/interoperability/<platform>/PYREADBNK.jcl` | JCL for Step 2 (sequential write, then read) |
+| `sources/jcl/interoperability/<platform>/PYMULTI.jcl` | JCL for Step 3 (multi-step filter/report) |
+| `sources/jcl/interoperability/<platform>/PYVSAM.jcl` | JCL for Step 4 (VSAM operations) |
+| `sources/jcl/interoperability/<platform>/PYCBLCL.jcl` | JCL for Step 5 (COBOL interop) |
 
 ---
 
@@ -956,4 +959,3 @@ Common causes:
 | Bitness mismatch | A 32-bit Python with a 64-bit region (or vice versa) — the load fails even though Python is on `PATH` |
 
 Because the region inherits `PATH` from the environment in which Enterprise Server was started, a Python installation that works from your own command prompt is not necessarily visible to the region. If `PATH` was changed after the region started, restart the region so it picks up the new value.
-

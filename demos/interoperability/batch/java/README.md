@@ -24,10 +24,17 @@ Rocket&reg; Enterprise Suite products provide a proprietary runtime engine to en
 
 - Rocket&reg; Enterprise Developer (to compile COBOL programs) or Rocket&reg; Enterprise Server (to run pre-built programs)
 - A 64-bit Enterprise Server region and 64-bit environment (JVMLDM requires a 64-bit process)
-- The Java Development Kit (JDK) bundled with Rocket Enterprise Developer on Windows, located at `C:\Program Files (x86)\Micro Focus\Enterprise Developer\AdoptOpenJDK` for the default installation. The supported major version is 21-25. If you prefer to use your own JDK, align to the same major version
+- The Java Development Kit (JDK) bundled with Rocket Enterprise Developer on Windows, located at `$TXDIR\AdoptOpenJDK` for the default installation. The supported major version is 21-25. If you prefer to use your own JDK, align to the same major version
 - An Enterprise Server instance configured for JCL batch processing (e.g. the [BANKVSAM](../../../demos/onprem/vsam/README.md) demonstration)
 - Ensure that the Directory Server (MFDS) service is running
 - Ensure that the Enterprise Server Common Web Administration (ESCWA) service is running
+
+> **`TXDIR`:** Throughout this guide, `TXDIR` refers to your Rocket Enterprise Developer/Server installation directory
+> (e.g. `C:\Program Files (x86)\Rocket Software\Enterprise Developer` on Windows). Unlike the product's `COBDIR`
+> variable, which on Windows is defined with a trailing `\;` (so it can be dropped straight into a semicolon-delimited
+> `PATH`), `TXDIR` has no trailing separator, so it is safe to concatenate directly (e.g. `$TXDIR\bin64\esjos.jar`)
+> without producing a broken `...Developer\;\bin64\esjos.jar` path. `TXDIR` is not set automatically by every
+> installation, so define it yourself as a region environment variable (see below) or in your shell before compiling.
 
 
 ## <a name="how-it-works"></a>How It Works
@@ -70,15 +77,24 @@ In this step, you create a simple COBOL program that calls a Java method, and a 
 ### Setup
 #### Ensure the region's environment variables include:
 
+Enterprise Server expands `$VAR` references in the region's `[ES-Environment]`
+configuration on both Windows and Linux. Do not use Windows command-shell
+syntax such as `%ESP%` or `%PATH%` here.
+
 **Windows:**
-   - `JAVA_HOME=C:\Program Files (x86)\Micro Focus\Enterprise Developer\AdoptOpenJDK`
-   - `PATH=C:\Program Files (x86)\Micro Focus\Enterprise Developer\AdoptOpenJDK\bin\server;<existing PATH>`
-   - `CLASSPATH=C:\Program Files (x86)\Micro Focus\Enterprise Developer\bin64\esjos.jar;<expanded ESP>\loadlib`
+   - `TXDIR=C:\Program Files (x86)\Rocket Software\Enterprise Developer`
+   - `JAVA_HOME=$TXDIR\AdoptOpenJDK`
+   - `CLASSPATH=$TXDIR\bin64\esjos.jar;$ESP\loadlib`
 
 **Linux:**
+   - `TXDIR=/path/to/enterprise/developer`
    - `JAVA_HOME=/path/to/jdk`
-   - `PATH=$/path/to/jdk/lib/server:$PATH`
-   - `CLASSPATH=$COBDIR/lib/esjos.jar:$ESP/loadlib`
+   - `CLASSPATH=$TXDIR/lib/esjos.jar:$ESP/loadlib`
+
+Do not add a Java-specific `PATH` value to the region. Enterprise Server can
+locate the required runtime components without it, while an incorrectly
+expanded `PATH` can prevent JVMLDM from finding utilities such as
+`stdenvhelper`.
 
 ### 1.1 Write the Java Class
 
@@ -120,6 +136,7 @@ class HelloBatch {
 Create the file `HELLOJAV.cbl`:
 
 ```cobol
+      $set outdd"SYSOUT"
       *
       * Simple demonstration of calling a Java class from COBOL.
       * The Java class HelloBatch.run() is invoked using the
@@ -187,13 +204,13 @@ ENVAR("ESOS_TEST_VAR=HELLO_FROM_ESOS")
 
    **Windows** (Enterprise Developer 64-bit Command Prompt):
    ```
-   javac -cp "C:\Program Files (x86)\Micro Focus\Enterprise Developer\bin64\esjos.jar" HelloBatch.java
+   javac -cp "%TXDIR%\bin64\esjos.jar" HelloBatch.java
    cbllink -D HELLOJAV.cbl
    ```
 
    **Linux:**
    ```
-   javac -cp "$COBDIR/lib/esjos.jar" HelloBatch.java
+   javac -cp "$TXDIR/lib/esjos.jar" HelloBatch.java
    cob -z HELLOJAV.cbl
    ```
 
@@ -216,18 +233,20 @@ ENVAR("ESOS_TEST_VAR=HELLO_FROM_ESOS")
 
 In this step, you bypass the COBOL bootstrap and invoke a Java class directly from JCL using the **JVMLDM** load module. This is useful when Java is the primary language for your batch step. This step also covers argument passing via multiple sources (PARM, JZOS_MAIN_ARGS, MAINARGS DD) and inline STDENV configuration.
 
-> **Setup:** Ensure the region's environment includes `JAVA_HOME` and `CLASSPATH` (loadlib only — JVMLDM adds `esjos.jar` automatically).
+> **Setup:** Ensure the region's environment includes `JAVA_HOME` and the full
+> `CLASSPATH` shown below. The classpath must contain both `esjos.jar` and the
+> region loadlib; JVMLDM does not add `esjos.jar` when `CLASSPATH` is explicitly configured.
 >
-> Note: This avoids having different JCL files on each step for Windows and Linux, with script syntax differences for this demo. However, this still can be moved to STDENV, CEEOPTS, etc to initialise the LE for the job.
+> Use the JCL from `sources/jcl/interoperability/windows/` or `sources/jcl/interoperability/linux/` to match the platform-specific STDENV shell syntax.
 >
 > | | Variable | Value |
 > |---|----------|-------|
-> | **Windows** | `JAVA_HOME` | `C:\Program Files (x86)\Micro Focus\Enterprise Developer\AdoptOpenJDK` |
-> | | `CLASSPATH` | `%ESP%\loadlib` |
+> | **Windows** | `JAVA_HOME` | `$TXDIR\AdoptOpenJDK` |
+> | | `CLASSPATH` | `$TXDIR\bin64\esjos.jar;$ESP\loadlib` |
 > | **Linux** | `JAVA_HOME` | `/path/to/jdk` |
-> | | `CLASSPATH` | `$ESP/loadlib` |
+> | | `CLASSPATH` | `$TXDIR/lib/esjos.jar:$ESP/loadlib` |
 >
-> The JCL uses `STDENV DD DUMMY` so that JVMLDM inherits these from the region. Alternatively, you can set them inline via `STDENV DD *` (see [§2.5](#25-stdenv-configuration)).
+> Most Java JCL uses `STDENV DD DUMMY` so that JVMLDM inherits these from the region. `JVMDEMO.jcl` includes inline STDENV to demonstrate `JZOS_MAIN_ARGS`.
 
 ### 2.1 Write the Java Class
 
@@ -300,7 +319,7 @@ arg5 arg6
 
 | DD Name | Purpose |
 |---------|---------|
-| STDENV | Environment setup script (sets CLASSPATH, JAVA_HOME, etc.) |
+| STDENV | Optional per-step environment setup script; `DD DUMMY` inherits the region environment |
 | SYSPRINT | System standard output from JVMLDM |
 | SYSOUT | System standard error from JVMLDM |
 | STDOUT | Java `System.out` (after stream redirection) |
@@ -341,9 +360,8 @@ Example with JVM options:
 Windows:
 ```jcl
 //STDENV    DD *
-set JAVA_HOME=C:\Program Files (x86)\Micro Focus\Enterprise Developer\AdoptOpenJDK
-set PATH=%JAVA_HOME%\bin\server;%PATH%
-set CLASSPATH=%ESP%\loadlib;%CLASSPATH%
+set JAVA_HOME=%TXDIR%\AdoptOpenJDK
+set CLASSPATH=%TXDIR%\bin64\esjos.jar;%ESP%\loadlib
 set JZOS_JVM_OPTIONS=-Djzos.merge.sysout=true
 /*
 ```
@@ -352,13 +370,16 @@ Linux:
 ```jcl
 //STDENV    DD *
 export JAVA_HOME=/path/to/jdk
-export PATH=$JAVA_HOME/bin/server:$PATH
-export CLASSPATH=$ESP/loadlib:$CLASSPATH
+export CLASSPATH=$TXDIR/lib/esjos.jar:$ESP/loadlib
 export JZOS_JVM_OPTIONS=-Djzos.merge.sysout=true
 /*
 ```
 
-> **Note:** When using inline STDENV, the script syntax is platform-specific (`set` on Windows, `export` on Linux). Using `STDENV DD DUMMY` with region-level environment variables avoids this difference.
+> **Note:** `STDENV DD *` is a shell script, unlike the region's
+> `[ES-Environment]` configuration. Use `set` and `%VAR%` in a Windows
+> STDENV script, or `export` and `$VAR` in a Linux STDENV script. Using
+> `STDENV DD DUMMY` with region-level environment variables avoids this
+> difference.
 
 > **Tip:** The STDENV script can also change the current working directory (e.g. `cd /path/to/dir` on Linux or `cd \path\to\dir` on Windows), which affects the JVM's `user.dir` property and any relative paths used by your Java code.
 
@@ -386,7 +407,7 @@ export JZOS_JVM_OPTIONS=-Djzos.merge.sysout=true
      Report complete. RC=0                                                                                                                 
    ```
 
-> **Note:** The arguments are assembled in the order **ARGS → JZOS_MAIN_ARGS → MAINARGS**. JVMLDM handles adding `esjos.jar` to the CLASSPATH implicitly and manages stream redirection automatically.
+> **Note:** The arguments are assembled in the order **ARGS → JZOS_MAIN_ARGS → MAINARGS**. JVMLDM manages stream redirection automatically; `esjos.jar` must already be present in `CLASSPATH`.
 
 > **Tip: Using `-jar` with JVMLDM**
 >
@@ -404,7 +425,7 @@ export JZOS_JVM_OPTIONS=-Djzos.merge.sysout=true
 
 This step demonstrates how a Java program invoked from JCL can read and write Enterprise Server datasets using the `ZFile` API from the `com.rocketsoftware.jzos` package.
 
-> **Setup:** Ensure the region's environment includes `JAVA_HOME` and `CLASSPATH` (loadlib only — JVMLDM adds `esjos.jar` automatically) as described in [Step 2](#step2). The JCL uses `STDENV DD DUMMY` so that JVMLDM inherits these from the region.
+> **Setup:** Ensure the region's environment includes `JAVA_HOME` and the full `CLASSPATH` described in [Step 2](#step2). The JCL uses `STDENV DD DUMMY` so that JVMLDM inherits these from the region.
 
 ### 3.1 Write the Java Class
 
@@ -537,13 +558,13 @@ TRAP(ON,NOSPIE)
 
    **Windows** (Enterprise Developer 64-bit Command Prompt):
    ```
-   javac -cp "C:\Program Files (x86)\Micro Focus\Enterprise Developer\bin64\esjos.jar" ReadBankData.java
+   javac -cp "%TXDIR%\bin64\esjos.jar" ReadBankData.java
    cbllink -D READBNKJ.cbl
    ```
 
    **Linux:**
    ```
-   javac -cp "$COBDIR/lib/esjos.jar" ReadBankData.java
+   javac -cp "$TXDIR/lib/esjos.jar" ReadBankData.java
    cob -z READBNKJ.cbl
    ```
 
@@ -576,7 +597,7 @@ TRAP(ON,NOSPIE)
 
 This step brings everything together in a realistic multi-step batch job that processes BankDemo datasets. The job reads customer records, joins them with account data, decodes packed-decimal balances, reads control parameters from STDIN, writes a formatted report to STDOUT, and logs diagnostics to STDERR. It demonstrates `ZFile` for VSAM I/O, `ZUtil` for stream redirection and job introspection, `ZFileException` handling, and MAINARGS-driven filtering.
 
-> **Setup:** Ensure the region's environment includes `JAVA_HOME` and `CLASSPATH` (loadlib only — JVMLDM adds `esjos.jar` automatically) as described in [Step 2](#step2). The JCL uses `STDENV DD DUMMY` so that JVMLDM inherits these from the region.
+> **Setup:** Ensure the region's environment includes `JAVA_HOME` and the full `CLASSPATH` described in [Step 2](#step2). The JCL uses `STDENV DD DUMMY` so that JVMLDM inherits these from the region.
 
 ### 4.1 Java Class: BankCustAcctReport.java
 
@@ -859,12 +880,12 @@ REPORT_TITLE=Daily Customer Account Summary - Filtered
 
    **Windows:**
    ```
-   javac -cp "C:\Program Files (x86)\Micro Focus\Enterprise Developer\bin64\esjos.jar" BankCustAcctReport.java
+   javac -cp "%TXDIR%\bin64\esjos.jar" BankCustAcctReport.java
    ```
 
    **Linux:**
    ```
-   javac -cp "$COBDIR/lib/esjos.jar" BankCustAcctReport.java
+   javac -cp "$TXDIR/lib/esjos.jar" BankCustAcctReport.java
    ```
 
 2. **Deploy** `BankCustAcctReport.class` to your CLASSPATH directory (e.g. `$ESP/loadlib`).
@@ -948,7 +969,7 @@ Loaded
 
 This step demonstrates direct VSAM KSDS operations from Java - **keyed lookup**, **sequential browse**, and **record update** - against the BankDemo customer dataset (`BNKCUST`). It shows how to use `ZFile.locate()` with `ZFileConstants` seek flags, read individual records, and update them in place.
 
-> **Setup:** Ensure the region's environment includes `JAVA_HOME` and `CLASSPATH` (loadlib only — JVMLDM adds `esjos.jar` automatically) as described in [Step 2](#step2). The JCL uses `STDENV DD DUMMY` so that JVMLDM inherits these from the region.
+> **Setup:** Ensure the region's environment includes `JAVA_HOME` and the full `CLASSPATH` described in [Step 2](#step2). The JCL uses `STDENV DD DUMMY` so that JVMLDM inherits these from the region.
 
 ### What the program does
 
@@ -1378,12 +1399,12 @@ vsam.update(record, 0, record.length);
 
    **Windows:**
    ```
-   javac -cp "C:\Program Files (x86)\Micro Focus\Enterprise Developer\bin64\esjos.jar" VsamAccountOps.java
+   javac -cp "%TXDIR%\bin64\esjos.jar" VsamAccountOps.java
    ```
 
    **Linux:**
    ```
-   javac -cp "$COBDIR/lib/esjos.jar" VsamAccountOps.java
+   javac -cp "$TXDIR/lib/esjos.jar" VsamAccountOps.java
    ```
 
 2. **Deploy** `VsamAccountOps.class` to your CLASSPATH directory (e.g. `$ESP/loadlib`).
@@ -1466,15 +1487,15 @@ The source files for this demonstration are located in the following directories
 |------|----------|-------------|
 | `HELLOJAV.cbl` | `sources/cobol/core/` | COBOL bootstrap for Hello World |
 | `HelloBatch.java` | `sources/java/` | Hello World Java class |
-| `HELLOJAV.jcl` | `sources/jcl/` | JCL for Hello World demo |
+| `HELLOJAV.jcl` | `sources/jcl/interoperability/<platform>/` | JCL for Hello World demo |
 | `ReadBankData.java` | `sources/java/` | ZFile dataset reader |
-| `JVMREADBNK.jcl` | `sources/jcl/` | JCL for ZFile demo |
+| `JVMREADBNK.jcl` | `sources/jcl/interoperability/<platform>/` | JCL for ZFile demo |
 | `BatchReport.java` | `sources/java/` | Direct JVMLDM Java class |
-| `JVMDEMO.jcl` | `sources/jcl/` | JCL for JVMLDM direct demo |
+| `JVMDEMO.jcl` | `sources/jcl/interoperability/<platform>/` | JCL for JVMLDM direct demo |
 | `BankCustAcctReport.java` | `sources/java/` | Multi-step customer/account report |
-| `JVMMULTI.jcl` | `sources/jcl/` | Multi-step Java batch job |
+| `JVMMULTI.jcl` | `sources/jcl/interoperability/<platform>/` | Multi-step Java batch job |
 | `VsamAccountOps.java` | `sources/java/` | VSAM KSDS operations demo |
-| `JVMVSAM.jcl` | `sources/jcl/` | JCL for VSAM operations demo |
+| `JVMVSAM.jcl` | `sources/jcl/interoperability/<platform>/` | JCL for VSAM operations demo |
 ---
 
 ## <a name="troubleshooting"></a>Troubleshooting
