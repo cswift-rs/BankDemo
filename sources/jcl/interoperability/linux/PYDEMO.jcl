@@ -37,11 +37,7 @@
 //STDOUT   DD  SYSOUT=*
 //STDERR   DD  SYSOUT=*
 //STDENV   DD  *
-export PYTHONPATH=$ESP/../../sources/python:$PYTHONPATH
 export ESPY_WORKING_DIR=$ESP/../../sources/python
-export ESPY_OUTPUT_ENCODING=ASCII
-export ESPY_ENABLE_OUTPUT_TRANSCODING=false
-export ESPY_MERGE_SYSOUT=false
 export ESPY_MAIN_ARGS="envArg1 envArg2"
 /*
 //MAINARGS DD  *
@@ -58,9 +54,6 @@ arg3 arg4
 //STDERR   DD  SYSOUT=*
 //STDENV   DD  *
 export PYTHONPATH=$ESP/../../sources/python:$PYTHONPATH
-export ESPY_OUTPUT_ENCODING=ASCII
-export ESPY_ENABLE_OUTPUT_TRANSCODING=false
-export ESPY_MERGE_SYSOUT=false
 /*
 //MAINARGS DD  *
 //

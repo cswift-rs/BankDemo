@@ -72,7 +72,9 @@ Because all four datasets are cataloged during provisioning, the Python demonstr
 
 ### Region Configuration
 
-No region configuration is required. The `esos` and `zoautil_py` packages supplied with Enterprise Server are located automatically, and the `STDENV` DD in each JCL job step adds the demonstration's own script directory to `PYTHONPATH` (e.g. `%ESP%\..\..\sources\python`) so PYLDM can find the `.py` files.
+No region configuration is required. The `esos` and `zoautil_py` packages
+supplied with Enterprise Server are located automatically. Each JCL step
+sets only the lookup variable required by its invocation mode.
 
 > **About `%ESP%`:** BANKVSAM provisioning defines `ESP` as the region's
 > system directory (for example `C:\BankDemo\BANKVSAM\system`), so users do
@@ -144,25 +146,31 @@ Unlike the Java interop (which requires `JAVA_HOME`, classpath configuration, an
 
 ### Environment Configuration (STDENV DD)
 
-The STDENV DD contains environment variable assignments executed before the Python script runs. Its primary purpose is to add your **application script directories** to `PYTHONPATH` so PYLDM can locate the `.py` files to execute:
+The STDENV DD contains environment variable assignments executed before
+Python runs. Use `ESPY_WORKING_DIR` when invoking a script file:
+
+```
+set ESPY_WORKING_DIR=%ESP%\..\..\sources\python
+```
+
+Use `PYTHONPATH` instead when invoking a module with `-m`:
 
 ```
 set PYTHONPATH=%ESP%\..\..\sources\python;%PYTHONPATH%
-set ESPY_WORKING_DIR=%ESP%\..\..\sources\python
-set ESPY_OUTPUT_ENCODING=ASCII
-set ESPY_ENABLE_OUTPUT_TRANSCODING=false
-set ESPY_MERGE_SYSOUT=false
 ```
 
 | Variable | Purpose |
 |----------|---------|
-| `PYTHONPATH` | Adds the application script directory (uses `%PYTHONPATH%` to preserve existing entries) |
-| `ESPY_WORKING_DIR` | Working directory for the script |
-| `ESPY_OUTPUT_ENCODING` | Encoding for redirected output streams |
-| `ESPY_ENABLE_OUTPUT_TRANSCODING` | Enable/disable encoding transcoding |
-| `ESPY_MERGE_SYSOUT` | Merge stdout and stderr to SYSOUT DD |
+| `PYTHONPATH` | Makes modules importable for `-m` invocation |
+| `ESPY_WORKING_DIR` | Sets the working directory where PYLDM locates script files |
+| `ESPY_OUTPUT_ENCODING` | Encoding for redirected output streams; defaults to the system encoding |
+| `ESPY_ENABLE_OUTPUT_TRANSCODING` | Enable/disable encoding transcoding; defaults to `true` |
+| `ESPY_MERGE_SYSOUT` | Merge stdout and stderr to SYSOUT DD; defaults to `false` |
 | `ESPY_MAIN_ARGS` | Additional script arguments, appended after the PARM arguments |
 | `ESPY_MAIN_ARGS_DD` | Name of the DD holding further arguments (defaults to `MAINARGS`) |
+
+The samples use the output defaults and do not override the three output
+variables.
 
 > Use the JCL from `sources/jcl/interoperability/windows/` or `sources/jcl/interoperability/linux/` so the STDENV script matches the platform shell.
 
@@ -216,7 +224,6 @@ def main(args=None):
 //             PYSCRIPT='batch_report.py',
 //             ARGS='hello world'
 //STDENV   DD  *
-set PYTHONPATH=%ESP%\..\..\sources\python;%PYTHONPATH%
 set ESPY_WORKING_DIR=%ESP%\..\..\sources\python
 /*
 //MAINARGS DD  *
@@ -260,16 +267,12 @@ Arguments received: 6
   arg[5] = 'arg4'
 
 PYLDM environment:
-  ESPY_ENABLE_OUTPUT_TRANSCODING = false
   ESPY_MAIN_ARGS = envArg1 envArg2
-  ESPY_MERGE_SYSOUT = false
-  ESPY_OUTPUT_ENCODING = ASCII
   ESPY_WORKING_DIR = C:\dev\BankDemo\BANKVSAM\system\..\..\sources\python
 
 PYTHONPATH entries:
-  [1] C:\dev\BankDemo\BANKVSAM\system\..\..\sources\python
-  [2] C:\Program Files (x86)\Rocket Software\Enterprise Developer\binpy\esos.zip
-  [3] C:\Program Files (x86)\Rocket Software\Enterprise Developer\binpy\zoautil_py.zip
+  [1] C:\Program Files (x86)\Rocket Software\Enterprise Developer\binpy\esos.zip
+  [2] C:\Program Files (x86)\Rocket Software\Enterprise Developer\binpy\zoautil_py.zip
 
 Report complete. RC=0
 ============================================================

@@ -37,11 +37,7 @@
 //STDOUT   DD  SYSOUT=*
 //STDERR   DD  SYSOUT=*
 //STDENV   DD  *
-set PYTHONPATH=%ESP%\..\..\sources\python;%PYTHONPATH%
 set ESPY_WORKING_DIR=%ESP%\..\..\sources\python
-set ESPY_OUTPUT_ENCODING=ASCII
-set ESPY_ENABLE_OUTPUT_TRANSCODING=false
-set ESPY_MERGE_SYSOUT=false
 set ESPY_MAIN_ARGS=envArg1 envArg2
 /*
 //MAINARGS DD  *
@@ -58,9 +54,6 @@ arg3 arg4
 //STDERR   DD  SYSOUT=*
 //STDENV   DD  *
 set PYTHONPATH=%ESP%\..\..\sources\python;%PYTHONPATH%
-set ESPY_OUTPUT_ENCODING=ASCII
-set ESPY_ENABLE_OUTPUT_TRANSCODING=false
-set ESPY_MERGE_SYSOUT=false
 /*
 //MAINARGS DD  *
 //

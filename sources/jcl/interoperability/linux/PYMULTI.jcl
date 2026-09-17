@@ -35,11 +35,7 @@
 //STDOUT   DD  SYSOUT=*
 //STDERR   DD  SYSOUT=*
 //STDENV   DD  *
-export PYTHONPATH=$ESP/../../sources/python:$PYTHONPATH
 export ESPY_WORKING_DIR=$ESP/../../sources/python
-export ESPY_OUTPUT_ENCODING=ASCII
-export ESPY_ENABLE_OUTPUT_TRANSCODING=false
-export ESPY_MERGE_SYSOUT=false
 /*
 //********************************************************************
 //* Application DDs                                                  *
@@ -59,11 +55,7 @@ export ESPY_MERGE_SYSOUT=false
 //STDOUT   DD  SYSOUT=*
 //STDERR   DD  SYSOUT=*
 //STDENV   DD  *
-export PYTHONPATH=$ESP/../../sources/python:$PYTHONPATH
 export ESPY_WORKING_DIR=$ESP/../../sources/python
-export ESPY_OUTPUT_ENCODING=ASCII
-export ESPY_ENABLE_OUTPUT_TRANSCODING=false
-export ESPY_MERGE_SYSOUT=false
 /*
 //********************************************************************
 //* Application DDs                                                  *
