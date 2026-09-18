@@ -24,16 +24,17 @@ Rocket&reg; Enterprise Suite products provide a proprietary runtime engine to en
 
 - Rocket&reg; Enterprise Developer (to compile COBOL programs) or Rocket&reg; Enterprise Server (to run pre-built programs)
 - A 64-bit Enterprise Server region and 64-bit environment (JVMLDM requires a 64-bit process)
-- The Java Development Kit (JDK) bundled with Rocket Enterprise Developer on Windows, located at `$TXDIR\AdoptOpenJDK` for the default installation. The supported major version is 21-25. If you prefer to use your own JDK, align to the same major version
+- The Java Development Kit (JDK) bundled with Rocket Enterprise Developer on Windows, located at `Enterprise Developer\AdoptOpenJDK` for the default installation. On Linux, use the JDK installed on your system. The supported major version is 21-25. If you prefer to use your own JDK, align to the same major version
 - An Enterprise Server instance configured for JCL batch processing (e.g. the [BANKVSAM](../../../demos/onprem/vsam/README.md) demonstration)
 - Ensure that the Directory Server (MFDS) service is running
 - Ensure that the Enterprise Server Common Web Administration (ESCWA) service is running
 
-> **`TXDIR`:** Throughout this guide, `TXDIR` refers to your Rocket Enterprise Developer/Server installation directory
-> (e.g. `C:\Program Files (x86)\Rocket Software\Enterprise Developer` on Windows). Unlike the product's `COBDIR`
-> variable, which on Windows is defined with a trailing `\;` (so it can be dropped straight into a semicolon-delimited
-> `PATH`), `TXDIR` has no trailing separator, so it is safe to concatenate directly (e.g. `$TXDIR\bin64\esjos.jar`)
-> without producing a broken `...Developer\;\bin64\esjos.jar` path. `TXDIR` is set automatically in an ES environment. 
+> **Installation directory variables:** On Windows, `TXDIR` refers to your Rocket Enterprise
+> Developer/Server installation directory (for example, `C:\Program Files (x86)\Rocket
+> Software\Enterprise Developer`). Use `TXDIR` in Windows paths because `COBDIR` may
+> include a trailing `\;` for `PATH` configuration. On Linux, use the standard `COBDIR`
+> variable; it does not include a trailing separator, so paths such as
+> `$COBDIR/lib/esjos.jar` can be expanded directly.
 
 
 ## <a name="how-it-works"></a>How It Works
@@ -90,7 +91,7 @@ syntax such as `%ESP%` or `%PATH%` here.
 
 **Linux:**
    - `JAVA_HOME=/path/to/jdk`
-   - `CLASSPATH=$TXDIR/lib/esjos.jar:$ESP/loadlib`
+   - `CLASSPATH=$COBDIR/lib/esjos.jar:$ESP/loadlib`
 
 Do not add a Java-specific `PATH` value to the region. Enterprise Server can
 locate the required runtime components without it, while an incorrectly
@@ -237,7 +238,7 @@ ENVAR("ESOS_TEST_VAR=HELLO_FROM_ESOS",
 
    **Linux:**
    ```
-   javac -cp "$TXDIR/lib/esjos.jar" HelloBatch.java
+   javac -cp "$COBDIR/lib/esjos.jar" HelloBatch.java
    cob -z HELLOJAV.cbl
    ```
 
@@ -277,7 +278,7 @@ In this step, you bypass the COBOL bootstrap and invoke a Java class directly fr
 > | **Windows** | `JAVA_HOME` | `$TXDIR\AdoptOpenJDK` |
 > | | `CLASSPATH` | `$TXDIR\bin64\esjos.jar;$ESP\loadlib` |
 > | **Linux** | `JAVA_HOME` | `/path/to/jdk` |
-> | | `CLASSPATH` | `$TXDIR/lib/esjos.jar:$ESP/loadlib` |
+> | | `CLASSPATH` | `$COBDIR/lib/esjos.jar:$ESP/loadlib` |
 >
 > Most Java JCL uses `STDENV DD DUMMY` so that JVMLDM inherits these from the region. `JVMDEMO.jcl` includes inline STDENV to demonstrate `JZOS_MAIN_ARGS`.
 
@@ -397,7 +398,7 @@ Linux:
 ```jcl
 //STDENV    DD *
 export JAVA_HOME=/path/to/jdk
-export CLASSPATH=$TXDIR/lib/esjos.jar:$ESP/loadlib
+export CLASSPATH=$COBDIR/lib/esjos.jar:$ESP/loadlib
 export JZOS_JVM_OPTIONS=-Djzos.merge.sysout=true
 /*
 ```
@@ -584,7 +585,7 @@ Create the file `JVMREADBNK.jcl`:
 
    **Linux:**
    ```
-   javac -cp "$TXDIR/lib/esjos.jar" ReadBankData.java
+   javac -cp "$COBDIR/lib/esjos.jar" ReadBankData.java
    ```
 
    The `esjos.jar` file is provided with Enterprise Developer/Server at `bin64/esjos.jar` and contains the `com.rocketsoftware.jzos` package.
@@ -899,7 +900,7 @@ REPORT_TITLE=Daily Customer Account Summary - Filtered
 
    **Linux:**
    ```
-   javac -cp "$TXDIR/lib/esjos.jar" BankCustAcctReport.java
+   javac -cp "$COBDIR/lib/esjos.jar" BankCustAcctReport.java
    ```
 
 2. **Deploy** `BankCustAcctReport.class` to your CLASSPATH directory (e.g. `$ESP/loadlib`).
@@ -1415,7 +1416,7 @@ vsam.update(record, 0, record.length);
 
    **Linux:**
    ```
-   javac -cp "$TXDIR/lib/esjos.jar" VsamAccountOps.java
+   javac -cp "$COBDIR/lib/esjos.jar" VsamAccountOps.java
    ```
 
 2. **Deploy** `VsamAccountOps.class` to your CLASSPATH directory (e.g. `$ESP/loadlib`).
