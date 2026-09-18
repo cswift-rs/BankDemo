@@ -35,6 +35,8 @@ Usage:
 import re
 import sys
 import ctypes
+import os
+import platform
 from decimal import Decimal
 
 from zoautil_py.zoau_io import zopen
@@ -72,8 +74,16 @@ def _load_conversion_api():
     constructor). PyDLL keeps the GIL held during the call; CDLL would
     release it, causing undefined behavior when the C code calls back
     into Python.
+    On Linux, load from $COBDIR/lib/cobcblcpyiapi64.so explicitly.
+    On Windows, use PyDLL with the simple name.
     """
-    bridge = ctypes.PyDLL("cblcpyiapi")
+    if platform.system() == "Linux":
+        cobdir = os.environ.get('COBDIR', '')
+        lib_path = os.path.join(cobdir, 'lib', 'cobcblcpyiapi64.so')
+        bridge = ctypes.PyDLL(lib_path, mode=ctypes.RTLD_GLOBAL, use_errno=True)
+    else:
+        # Windows: use PyDLL
+        bridge = ctypes.PyDLL("cblcpyiapi")
 
     # void * _mFpyStringFromCOBOL(const char *src, int type, int slen)
     # Returns: new Python str object (auto-strips trailing spaces)

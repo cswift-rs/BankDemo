@@ -43,6 +43,8 @@ Usage:
   EXEC PGM=PYLDM,PARM='cobol_interop.py TWOSCOMP HELLO'
 """
 
+import os
+import platform
 import ctypes
 import ctypes.util
 import struct
@@ -67,16 +69,15 @@ def _load_bridge():
     call Python C API functions internally (PyUnicode_FromString) which
     require the GIL to be held. _mFpyCobcall manages the GIL internally
     (PyGILState_Ensure/Release), so it also works correctly under PyDLL.
+    On Linux, load from $COBDIR/lib/cobcblcpyiapi64.so explicitly.
+    On Windows, use PyDLL with the simple name.
     """
-    try:
+    if platform.system() == "Linux":
+        cobdir = os.environ.get('COBDIR', '')
+        lib_path = os.path.join(cobdir, 'lib', 'cobcblcpyiapi64.so')
+        lib = ctypes.PyDLL(lib_path, mode=ctypes.RTLD_GLOBAL, use_errno=True)
+    else:
         lib = ctypes.PyDLL("cblcpyiapi")
-    except OSError:
-        # Fallback: try platform-specific library resolution
-        path = ctypes.util.find_library("cblcpyiapi")
-        if path is None:
-            raise RuntimeError("Cannot find cblcpyiapi library. "
-                               "Ensure PYLDM loaded the bridge.")
-        lib = ctypes.PyDLL(path)
 
     # Declare the function signature so ctypes can marshal arguments correctly
     # int _mFpyCobcall(const char *prog_name, int argc, cobchar_t **argv)

@@ -22,6 +22,8 @@ See PYREADBNK.jcl for the JCL that allocates the DD and runs this script.
 
 Usage: EXEC PGM=PYLDM,PARM='+I read_bank_data.py 5'
 """
+import os
+import platform
 import sys
 import ctypes
 
@@ -47,8 +49,17 @@ def _load_conversion_api():
 
     Must use PyDLL (not CDLL) because _mFpyStringFromCOBOL calls Python
     C API functions internally (PyUnicode_FromString) which require the GIL.
+    On Linux, load from $COBDIR/lib/cobcblcpyiapi64.so explicitly.
+    On Windows, use PyDLL with the simple name.
     """
-    bridge = ctypes.PyDLL("cblcpyiapi")
+    if platform.system() == "Linux":
+        cobdir = os.environ.get('COBDIR', '')
+        lib_path = os.path.join(cobdir, 'lib', 'cobcblcpyiapi64.so')
+        bridge = ctypes.PyDLL(lib_path, mode=ctypes.RTLD_GLOBAL, use_errno=True)
+    else:
+        bridge = ctypes.PyDLL("cblcpyiapi")
+
+        
     bridge._mFpyStringFromCOBOL.restype = ctypes.py_object
     bridge._mFpyStringFromCOBOL.argtypes = [
         ctypes.c_char_p, ctypes.c_int, ctypes.c_int
