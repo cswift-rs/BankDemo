@@ -33,8 +33,7 @@ Rocket&reg; Enterprise Suite products provide a proprietary runtime engine to en
 > (e.g. `C:\Program Files (x86)\Rocket Software\Enterprise Developer` on Windows). Unlike the product's `COBDIR`
 > variable, which on Windows is defined with a trailing `\;` (so it can be dropped straight into a semicolon-delimited
 > `PATH`), `TXDIR` has no trailing separator, so it is safe to concatenate directly (e.g. `$TXDIR\bin64\esjos.jar`)
-> without producing a broken `...Developer\;\bin64\esjos.jar` path. `TXDIR` is not set automatically by every
-> installation, so define it yourself as a region environment variable (see below) or in your shell before compiling.
+> without producing a broken `...Developer\;\bin64\esjos.jar` path. `TXDIR` is set automatically in an ES environment. 
 
 
 ## <a name="how-it-works"></a>How It Works
@@ -86,12 +85,10 @@ configuration on both Windows and Linux. Do not use Windows command-shell
 syntax such as `%ESP%` or `%PATH%` here.
 
 **Windows:**
-   - `TXDIR=C:\Program Files (x86)\Rocket Software\Enterprise Developer`
    - `JAVA_HOME=$TXDIR\AdoptOpenJDK`
    - `CLASSPATH=$TXDIR\bin64\esjos.jar;$ESP\loadlib`
 
 **Linux:**
-   - `TXDIR=/path/to/enterprise/developer`
    - `JAVA_HOME=/path/to/jdk`
    - `CLASSPATH=$TXDIR/lib/esjos.jar:$ESP/loadlib`
 
