@@ -157,6 +157,19 @@ Create the file `HELLOJAV.cbl`:
            .
 ```
 
+The sample is compiled by default in the normal COBOL dialect because `FCDCAT`
+and `OUTDD` provide the required catalog-aware `SYSOUT` behavior. To check the
+program with the mainframe-compatible `entcobol` dialect, temporarily replace
+those two `$set` lines with:
+
+```cobol
+      $set dialect(entcobol)
+```
+
+Compile the temporary version with the same command, then restore the original
+two lines before deploying it for this tutorial. `entcobol` does not accept the
+normal-dialect `FCDCAT` and `OUTDD` source directives.
+
 ### 1.3 Write the JCL
 
 Create the file `HELLOJAV.jcl`:
